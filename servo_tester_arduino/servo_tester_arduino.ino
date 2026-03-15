@@ -30,13 +30,13 @@ Possible levels of available information:
 
 4) Max speed known
    - ServoController can be used
-   - V% and A% become meaningful and are displayed
+   - Vel% and Accel% become meaningful and are displayed
 
 5) Feedback pin known
-   - raw ADC is displayed
+   - raw feedback ADC is displayed
 
 6) Feedback calibration known
-   - ADC_ang can also be displayed
+   - FBang can also be displayed
 
 Multiple servo configurations can be defined in servo_config.h.
 A button on D3 cycles through them. Whenever the active servo changes, PWM is
@@ -79,6 +79,18 @@ Expected servo_config.h symbols:
 // ============================================================================
 // Pins
 // ============================================================================
+//
+// Three potentiometers:
+//
+// A0 -> acceleration percentage
+// A1 -> speed percentage
+// A2 -> target position
+//
+// Two buttons:
+//
+// D4 -> PWM output ON/OFF
+// D3 -> select next servo configuration
+//
 
 #define POT_ACCEL_PIN          A0
 #define POT_SPEED_PIN          A1
@@ -90,6 +102,9 @@ Expected servo_config.h symbols:
 // ============================================================================
 // OLED configuration
 // ============================================================================
+//
+// Standard 128x64 SSD1306 display over I2C
+//
 
 #define SCREEN_WIDTH   128
 #define SCREEN_HEIGHT   64
@@ -100,6 +115,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 // ============================================================================
 // ADC helpers
 // ============================================================================
+//
+// Arduino Nano uses 10-bit ADC:
+// 0 .. 1023
+//
 
 #define ADC_SCALE   1023.0f
 #define POT_SAMPLES 4
@@ -114,28 +133,47 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 // Global objects / state
 // ============================================================================
 
+// ServoController instance used only when the active servo has enough data
+// to use the full library-based angular motion mode.
 ServoController servoCtrl;
+
+// Raw Servo object used in direct PWM modes.
+// This is useful for unknown servos or partially characterized servos.
 Servo rawServo;
 
 // Number of servo configurations available.
-// This avoids having to manually maintain TESTER_SERVO_COUNT.
+//
+// IMPORTANT:
+// This is computed automatically from the configuration array, so the user
+// does not have to maintain a TESTER_SERVO_COUNT define by hand.
 const uint8_t testerServoCount =
     sizeof(testerServoConfigs) / sizeof(testerServoConfigs[0]);
 
+// Index of the currently selected servo configuration inside testerServoConfigs[].
 uint8_t currentServoIndex = 0;
+
+// Pointer to the currently active configuration.
+// This avoids repeatedly indexing the array everywhere.
 const ServoConfig* activeCfg = nullptr;
 
+// PWM starts disabled by default for safety.
 bool pwmEnabled = false;
 
+// Debounce state for PWM ON/OFF button (D4)
 bool lastPwmButtonReading = LOW;
 bool stablePwmButtonState = LOW;
 unsigned long lastPwmDebounceTime = 0;
 
+// Debounce state for NEXT SERVO button (D3)
 bool lastNextButtonReading = LOW;
 bool stableNextButtonState = LOW;
 unsigned long lastNextDebounceTime = 0;
 
 // Cached display values.
+//
+// These values are updated continuously, even while PWM is OFF, so the user
+// can pre-adjust the target position and still see what will happen before
+// enabling the servo output.
 uint8_t displaySpeedPct  = 0;
 uint8_t displayAccelPct  = 0;
 float   displayPwmAngDeg = 0.0f;
@@ -145,6 +183,7 @@ int     displayPwmUs     = 0;
 // Utility helpers
 // ============================================================================
 
+// Simple clamp helper used throughout the sketch.
 static inline float clampf(float x, float lo, float hi)
 {
     if (x < lo) return lo;
@@ -152,6 +191,9 @@ static inline float clampf(float x, float lo, float hi)
     return x;
 }
 
+// Read an analog pin several times and return the average.
+//
+// This reduces visible jitter from the potentiometers and from analog noise.
 float readAveragedADC(uint8_t pin, int samples)
 {
     long sum = 0;
@@ -164,6 +206,9 @@ float readAveragedADC(uint8_t pin, int samples)
     return (float)sum / samples;
 }
 
+// Convert a potentiometer ADC value into an integer percentage in [1..100].
+//
+// This is used for the speed and acceleration controls.
 uint8_t percentFromAdc(float adc)
 {
     float t = clampf(adc / ADC_SCALE, 0.0f, 1.0f);
@@ -176,6 +221,8 @@ uint8_t percentFromAdc(float adc)
     return (uint8_t)pct;
 }
 
+// In raw-PWM mode, the position potentiometer directly controls PWM pulse width
+// between pwm_min_us and pwm_max_us.
 int pwmUsFromAdc(float adc, int pwmMin, int pwmMax)
 {
     float t = clampf(adc / ADC_SCALE, 0.0f, 1.0f);
@@ -188,6 +235,8 @@ int pwmUsFromAdc(float adc, int pwmMin, int pwmMax)
 }
 
 // Map target potentiometer to an angle range [angleMin..angleMax].
+//
+// This is used when at least angular information is known.
 float targetDegFromAdcRange(float adc, float angleMin, float angleMax)
 {
     float t = clampf(adc / ADC_SCALE, 0.0f, 1.0f);
@@ -199,7 +248,10 @@ float targetDegFromAdcRange(float adc, float angleMin, float angleMax)
     return deg;
 }
 
-// Local conversion from logical angle to PWM microseconds.
+// Convert a logical angle into PWM microseconds using the active servo config.
+//
+// This is used for display purposes and also in angle-direct mode.
+// It respects inversion and calibrated PWM limits.
 int pwmUsFromAngle(const ServoConfig& cfg, float angleDeg)
 {
     float logicalDeg = clampf(angleDeg, cfg.servo_min_deg, cfg.servo_max_deg);
@@ -229,6 +281,12 @@ int pwmUsFromAngle(const ServoConfig& cfg, float angleDeg)
     return (int)(pwm + 0.5f);
 }
 
+// Convert raw feedback ADC into angle using feedback calibration.
+//
+// This is only meaningful when:
+// - a feedback pin exists
+// - the servo angular range is known
+// - the feedback ADC limits are known
 float feedbackAngleFromAdc(const ServoConfig& cfg, int adc)
 {
     long adcMin = cfg.fb_adc_at_servo_min_deg;
@@ -251,27 +309,36 @@ float feedbackAngleFromAdc(const ServoConfig& cfg, int adc)
 // ---------------------------------------------------------------------------
 // Capability detection
 // ---------------------------------------------------------------------------
+//
+// The sketch adapts itself dynamically to the information available in the
+// current servo configuration.
+//
 
+// True if we know the basic angular span of the servo.
 bool hasServoAngleInfo(const ServoConfig& cfg)
 {
     return (cfg.servo_max_deg > cfg.servo_min_deg);
 }
 
+// True if we know a safe allowed application range.
 bool hasAllowedRangeInfo(const ServoConfig& cfg)
 {
     return (cfg.allowed_max_deg > cfg.allowed_min_deg);
 }
 
+// True if we know the maximum speed of the joint/servo.
 bool hasSpeedInfo(const ServoConfig& cfg)
 {
     return (cfg.max_speed_degps > 0.0f);
 }
 
+// True if an analog feedback pin is available.
 bool hasFeedbackPinInfo(const ServoConfig& cfg)
 {
     return (cfg.feedback_adc_pin != -1);
 }
 
+// True if feedback ADC can be converted meaningfully into angle.
 bool hasFeedbackCalibrationInfo(const ServoConfig& cfg)
 {
     return hasFeedbackPinInfo(cfg) &&
@@ -279,6 +346,10 @@ bool hasFeedbackCalibrationInfo(const ServoConfig& cfg)
            (cfg.fb_adc_at_servo_max_deg > cfg.fb_adc_at_servo_min_deg);
 }
 
+// Full ServoController mode requires:
+// - servo angular range
+// - allowed range
+// - speed data
 bool canUseServoController(const ServoConfig& cfg)
 {
     return hasServoAngleInfo(cfg) &&
@@ -286,11 +357,18 @@ bool canUseServoController(const ServoConfig& cfg)
            hasSpeedInfo(cfg);
 }
 
+// Angle-direct mode means:
+// - servo angular range exists
+// - but not enough information exists for full ServoController mode
 bool canUseAngleDirectMode(const ServoConfig& cfg)
 {
     return hasServoAngleInfo(cfg) && !canUseServoController(cfg);
 }
 
+// Return the currently usable angular range.
+//
+// If an allowed range is available, use it.
+// Otherwise use the full calibrated servo range.
 void getUsableAngleRange(const ServoConfig& cfg, float& outMinDeg, float& outMaxDeg)
 {
     if (hasAllowedRangeInfo(cfg))
@@ -309,6 +387,13 @@ void getUsableAngleRange(const ServoConfig& cfg, float& outMinDeg, float& outMax
 // Button handling
 // ---------------------------------------------------------------------------
 
+// Generic debounced pushbutton event detector.
+//
+// Buttons use EXTERNAL pull-down:
+// - released = LOW
+// - pressed  = HIGH
+//
+// Returns true only once for each valid press event.
 bool buttonPressedEvent(uint8_t pin,
                         bool& lastReading,
                         bool& stableState,
@@ -343,8 +428,7 @@ bool buttonPressedEvent(uint8_t pin,
 // ---------------------------------------------------------------------------
 
 // Copy at most 15 visible characters from the servo name into a local buffer.
-// This avoids line wrapping and keeps the first OLED line stable even if the
-// configured name is long.
+// This prevents wrapping and avoids visual corruption of the OLED layout.
 void makeShortServoName(const char* src, char* dst, size_t dstSize)
 {
     if (dstSize == 0) return;
@@ -372,22 +456,28 @@ void oledBeginFrame()
     display.setCursor(0, 0);
 }
 
+// Startup splash screen.
+// "Servo Tester" did not fit nicely on one line, so it is split in two lines.
 void oledPrintSplash()
 {
     display.clearDisplay();
     display.setTextColor(SSD1306_WHITE);
 
     display.setTextSize(2);
-    display.setCursor(4, 16);
-    display.print(F("Servo Tester"));
+    display.setCursor(34, 10);
+    display.print(F("Servo"));
+
+    display.setCursor(30, 30);
+    display.print(F("Tester"));
 
     display.setTextSize(1);
-    display.setCursor(40, 42);
+    display.setCursor(40, 54);
     display.print(F("v1.0.0"));
 
     display.display();
 }
 
+// Print servo name without ":" and clipped to 15 chars.
 void oledPrintServoName(const char* rawName)
 {
     char shortName[16];
@@ -409,11 +499,16 @@ void oledPrintLineInt(const __FlashStringHelper* label, int value)
     display.println(value);
 }
 
+// Print angle line in the requested format:
+//
+// PWMang [min...max] value
+//
+// Everything is shown without decimals to save space and improve readability.
 void oledPrintPwmAngLine(float minDeg, float maxDeg, float valueDeg)
 {
     display.print(F("PWMang ["));
     display.print(minDeg, 0);
-    display.print(F("..."));
+    display.print(F("-"));
     display.print(maxDeg, 0);
     display.print(F("] "));
     display.println(valueDeg, 0);
@@ -428,6 +523,7 @@ void oledEndFrame()
 // Servo switching / reinitialization
 // ============================================================================
 
+// Force every kind of PWM output OFF before changing servo configuration.
 void forcePwmOff()
 {
     servoCtrl.disableOutput();
@@ -435,6 +531,13 @@ void forcePwmOff()
     pwmEnabled = false;
 }
 
+// Load the currently selected servo configuration.
+//
+// Called:
+// - once at startup
+// - whenever the user presses NEXT SERVO
+//
+// Always starts the new servo with PWM OFF.
 void loadActiveServo()
 {
     forcePwmOff();
@@ -477,6 +580,7 @@ void loadActiveServo()
     }
 }
 
+// Advance currentServoIndex cyclically.
 void selectNextServo()
 {
     currentServoIndex++;
@@ -596,28 +700,35 @@ void loop()
         float minDeg, maxDeg;
         getUsableAngleRange(*activeCfg, minDeg, maxDeg);
 
+        // In full controller mode the target potentiometer is interpreted over
+        // the usable angular range, not simply over 0..180.
         targetDeg = targetDegFromAdcRange(adcTarget, minDeg, maxDeg);
 
         displaySpeedPct = speedPct;
         displayAccelPct = accelPct;
 
+        // Always update target, even with PWM OFF, so the user can pre-adjust
+        // the future command before enabling the output.
         servoCtrl.setTarget(targetDeg, speedPct, accelPct);
 
         if (pwmEnabled)
         {
             servoCtrl.update();
 
+            // With PWM ON, show the real internal command generated by the
+            // motion profile.
             displayPwmAngDeg = servoCtrl.getCommandDeg();
             displayPwmUs     = pwmUsFromAngle(*activeCfg, displayPwmAngDeg);
         }
         else
         {
+            // With PWM OFF, show directly the user-selected target angle.
             displayPwmAngDeg = targetDeg;
             displayPwmUs     = pwmUsFromAngle(*activeCfg, displayPwmAngDeg);
         }
 
         bool showAdc    = hasFeedbackPinInfo(*activeCfg);
-        bool showAdcAng = hasFeedbackCalibrationInfo(*activeCfg);
+        bool showFbAng  = hasFeedbackCalibrationInfo(*activeCfg);
 
         int fbAdc = 0;
         int fbAng = 0;
@@ -627,7 +738,7 @@ void loop()
             fbAdc = (int)(readAveragedADC(activeCfg->feedback_adc_pin, POT_SAMPLES) + 0.5f);
         }
 
-        if (showAdcAng)
+        if (showFbAng)
         {
             fbAng = (int)(feedbackAngleFromAdc(*activeCfg, fbAdc) + 0.5f);
         }
@@ -638,21 +749,21 @@ void loop()
         oledPrintLineOnOff(F("PWM "), servoCtrl.isOutputEnabled());
         oledPrintLineInt(F("PWMus "), displayPwmUs);
         oledPrintPwmAngLine(minDeg, maxDeg, displayPwmAngDeg);
-        oledPrintLineInt(F("V% "), displaySpeedPct);
-        oledPrintLineInt(F("A% "), displayAccelPct);
+        oledPrintLineInt(F("Vel% "), displaySpeedPct);
+        oledPrintLineInt(F("Accel% "), displayAccelPct);
 
         if (showAdc)
         {
-            oledPrintLineInt(F("ADC "), fbAdc);
+            oledPrintLineInt(F("FBadc "), fbAdc);
         }
         else
         {
             display.println(F(""));
         }
 
-        if (showAdcAng)
+        if (showFbAng)
         {
-            oledPrintLineInt(F("ADC_ang "), fbAng);
+            oledPrintLineInt(F("FBang "), fbAng);
         }
 
         oledEndFrame();
@@ -666,6 +777,8 @@ void loop()
         float minDeg, maxDeg;
         getUsableAngleRange(*activeCfg, minDeg, maxDeg);
 
+        // In angle-direct mode, the target potentiometer directly selects an
+        // angle in the known usable range. No motion profile is used.
         displayPwmAngDeg = targetDegFromAdcRange(adcTarget, minDeg, maxDeg);
         displayPwmUs     = pwmUsFromAngle(*activeCfg, displayPwmAngDeg);
 
@@ -675,7 +788,7 @@ void loop()
         }
 
         bool showAdc    = hasFeedbackPinInfo(*activeCfg);
-        bool showAdcAng = hasFeedbackCalibrationInfo(*activeCfg);
+        bool showFbAng  = hasFeedbackCalibrationInfo(*activeCfg);
 
         int fbAdc = 0;
         int fbAng = 0;
@@ -685,7 +798,7 @@ void loop()
             fbAdc = (int)(readAveragedADC(activeCfg->feedback_adc_pin, POT_SAMPLES) + 0.5f);
         }
 
-        if (showAdcAng)
+        if (showFbAng)
         {
             fbAng = (int)(feedbackAngleFromAdc(*activeCfg, fbAdc) + 0.5f);
         }
@@ -699,16 +812,16 @@ void loop()
 
         if (showAdc)
         {
-            oledPrintLineInt(F("ADC "), fbAdc);
+            oledPrintLineInt(F("FBadc "), fbAdc);
         }
         else
         {
             display.println(F(""));
         }
 
-        if (showAdcAng)
+        if (showFbAng)
         {
-            oledPrintLineInt(F("ADC_ang "), fbAng);
+            oledPrintLineInt(F("FBang "), fbAng);
         }
         else
         {
@@ -724,6 +837,7 @@ void loop()
     // ------------------------------------------------------------------------
     else
     {
+        // In raw mode the target potentiometer directly controls PWM pulse width.
         int pwmUs = pwmUsFromAdc(
             adcTarget,
             activeCfg->pwm_min_us,
@@ -751,7 +865,7 @@ void loop()
 
         if (showAdc)
         {
-            oledPrintLineInt(F("ADC "), fbAdc);
+            oledPrintLineInt(F("FBadc "), fbAdc);
         }
         else
         {
