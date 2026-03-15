@@ -62,17 +62,17 @@ Tested with:
 
 ### Connections
 
-| Device | Pin |
-|------|------|
-| Target potentiometer | A2 |
-| Speed potentiometer | A1 |
-| Acceleration potentiometer | A0 |
-| PWM enable button | D4 |
-| Next servo button | D3 |
-| Servo PWM output | defined in `servo_config.h` |
-| Feedback ADC | defined in `servo_config.h` |
-| OLED SDA | A4 |
-| OLED SCL | A5 |
+| Use | Pin | Connection |
+|------|------|------|
+| Target angle | A2 | Connected to 10K pot voltage divider |
+| Speed | A1 | Connected to 10K pot voltage divider |
+| Acceleration | A0 | Connected to 10K pot voltage divider |
+| PWM enable/disable | D4 | Connected to push button with 1K pulldown resistor |
+| Next servo | D3 | Connected to push button with 1K pulldown resistor |
+| PWM output | defined in `servo_config.h` | Connected to servo |
+| Feedback ADC | defined in `servo_config.h` | Connected to low-pass RC filter (10k/4.7uF) and from it to internal pot of servo |
+| OLED SDA | A4 | Connected to OLED display |
+| OLED SCL | A5 | Connected to OLED display |
 
 Buttons must use **external pull-down resistors**.
 
