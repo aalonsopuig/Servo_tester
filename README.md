@@ -56,6 +56,8 @@ Tested with:
 - SSD1306 OLED display (128x64 I2C)
 - standard hobby servos
 <br>
+![Servo tester](servo_tester_arduino/servo_tester_arduino.jpg)
+
 ### Connections
 
 | Device | Pin |
