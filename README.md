@@ -1,11 +1,22 @@
-# Arduino Multi-Servo Tester
+# Arduino Servo Tester
 
+Author: Alejandro Alonso Puig + GPT
+
+License: Apache 2.0 
+
+Repository: https://github.com/aalonsopuig
+
+Status: Validation in progress (March 2026)
+
+---
 Servo tester and characterization tool for Arduino Nano.
 
 This project allows testing and calibrating multiple servo configurations using a single hardware setup.  
 It is especially useful when working with robots that contain many different servos or mechanical reductions.
 
 The tester supports both **unknown servos** (PWM exploration) and **fully characterized servos** (angular control with limits, speed and acceleration).
+
+This application uses the Enhanced servo library https://github.com/aalonsopuig/Enhanced_Servo_Library
 
 ---
 
