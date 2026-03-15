@@ -24,9 +24,6 @@ NEXT SERVO pushbutton.
 
 #include "ServoController.h"
 
-// Number of servo configurations available in the tester.
-#define TESTER_SERVO_COUNT 5
-
 // Servo configuration table used by the tester.
 //
 // Field order:
@@ -35,7 +32,7 @@ NEXT SERVO pushbutton.
 // default_accel_pct, feedback_adc_pin, fb_adc_at_servo_min_deg,
 // fb_adc_at_servo_max_deg, inverted, fault_detection_enabled
 
-static ServoConfig testerServoConfigs[TESTER_SERVO_COUNT] =
+static ServoConfig testerServoConfigs[] =
 {
     {
         "UNKNOWN",    // name
@@ -57,7 +54,7 @@ static ServoConfig testerServoConfigs[TESTER_SERVO_COUNT] =
         false         // fault_detection_enabled
     },
     {
-        "CASO_A",   // name
+        "gdfgd",   // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
@@ -76,40 +73,78 @@ static ServoConfig testerServoConfigs[TESTER_SERVO_COUNT] =
         false         // fault_detection_enabled
     },
     {
-        "CASO_B",   // name
+        "SG-5010",   // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
-        20,            // allowed_min_deg
-        140,          // allowed_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
         90,           // rest_deg
-        700,          // pwm_min_us
-        2400,         // pwm_max_us
-        0.0f,         // max_speed_degps -> unknown
-        0,            // default_speed_pct -> unused
-        0,            // default_accel_pct -> unused
-        3,            // feedback_adc_pin  (A3 on Arduino Nano)
-        0,            // fb_adc_at_servo_min_deg
-        0,            // fb_adc_at_servo_max_deg
+        500,          // pwm_min_us
+        1800,         // pwm_max_us
+        261.0f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,            // feedback_adc_pin disabled
+        0,          // fb_adc_at_servo_min_deg
+        0,          // fb_adc_at_servo_max_deg
         false,        // inverted
         false         // fault_detection_enabled
     },
     {
-        "CASO_C",   // name
+        "Hitec HS-805BB",   // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
-        20,            // allowed_min_deg
-        140,          // allowed_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
         90,           // rest_deg
         700,          // pwm_min_us
         2400,         // pwm_max_us
-        17.5f,        // max_speed_degps
-        0,            // default_speed_pct -> unused
-        0,            // default_accel_pct -> unused
-        3,            // feedback_adc_pin  (A3 on Arduino Nano)
-        0,            // fb_adc_at_servo_min_deg
-        0,            // fb_adc_at_servo_max_deg
+        428.6f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,            // feedback_adc_pin disabled
+        0,          // fb_adc_at_servo_min_deg
+        0,          // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "Hitec HS-805B2",   // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
+        90,           // rest_deg
+        700,          // pwm_min_us
+        2400,         // pwm_max_us
+        428.6f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,            // feedback_adc_pin disabled
+        0,          // fb_adc_at_servo_min_deg
+        0,          // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "Hitec HS-805B3",   // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
+        90,           // rest_deg
+        700,          // pwm_min_us
+        2400,         // pwm_max_us
+        428.6f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,            // feedback_adc_pin disabled
+        0,          // fb_adc_at_servo_min_deg
+        0,          // fb_adc_at_servo_max_deg
         false,        // inverted
         false         // fault_detection_enabled
     },
