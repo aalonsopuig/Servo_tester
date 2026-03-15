@@ -7,11 +7,14 @@ License:      Apache 2.0
 -------------------------------------------------------------------------------
 Description:
 
-Single-servo configuration file used by servo_tester_arduino.ino.
+Multi-servo configuration file used by servo_tester_arduino.ino.
 
-This file isolates the servo characterization data from the main sketch so
-the user can adapt the tester to another servo or articulation without
+This file isolates servo characterization data from the main sketch so
+the user can adapt the tester to different servos or articulations without
 modifying the application logic.
+
+The tester can cycle through all entries in this table by using the
+NEXT SERVO pushbutton.
 
 ===============================================================================
 */
@@ -21,7 +24,10 @@ modifying the application logic.
 
 #include "ServoController.h"
 
-// Single servo configuration used by the tester.
+// Number of servo configurations available in the tester.
+#define TESTER_SERVO_COUNT 5
+
+// Servo configuration table used by the tester.
 //
 // Field order:
 // name, pwm_pin, servo_min_deg, servo_max_deg, allowed_min_deg, allowed_max_deg,
@@ -29,25 +35,104 @@ modifying the application logic.
 // default_accel_pct, feedback_adc_pin, fb_adc_at_servo_min_deg,
 // fb_adc_at_servo_max_deg, inverted, fault_detection_enabled
 
-static ServoConfig testerServoConfig =
+static ServoConfig testerServoConfigs[TESTER_SERVO_COUNT] =
 {
-    "SHOULDER",   // name
-    13,           // pwm_pin
-    0,            // servo_min_deg
-    180,          // servo_max_deg
-    0,            // allowed_min_deg
-    180,          // allowed_max_deg
-    90,           // rest_deg
-    700,          // pwm_min_us
-    2400,         // pwm_max_us
-    17.5f,        // max_speed_degps
-    100,          // default_speed_pct
-    100,          // default_accel_pct
-    3,            // feedback_adc_pin  (A3 on Arduino Nano)
-    101,          // fb_adc_at_servo_min_deg
-    383,          // fb_adc_at_servo_max_deg
-    false,        // inverted
-    false         // fault_detection_enabled
+    {
+        "UNKNOWN",    // name
+        9,            // pwm_pin
+        0,            // servo_min_deg   -> unknown
+        0,            // servo_max_deg   -> unknown
+        0,            // allowed_min_deg -> unknown
+        0,            // allowed_max_deg -> unknown
+        0,            // rest_deg        -> unknown
+        500,          // pwm_min_us
+        2500,         // pwm_max_us
+        0.0f,         // max_speed_degps -> unknown
+        0,            // default_speed_pct -> unused
+        0,            // default_accel_pct -> unused
+        3,            // feedback_adc_pin  (A3 on Arduino Nano)
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "CASO_A",   // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        0,            // allowed_min_deg -> unknown
+        0,            // allowed_max_deg -> unknown
+        0,            // rest_deg        -> unknown
+        700,          // pwm_min_us
+        2400,         // pwm_max_us
+        0.0f,         // max_speed_degps -> unknown
+        0,            // default_speed_pct -> unused
+        0,            // default_accel_pct -> unused
+        3,            // feedback_adc_pin  (A3 on Arduino Nano)
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "CASO_B",   // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        20,            // allowed_min_deg
+        140,          // allowed_max_deg
+        90,           // rest_deg
+        700,          // pwm_min_us
+        2400,         // pwm_max_us
+        0.0f,         // max_speed_degps -> unknown
+        0,            // default_speed_pct -> unused
+        0,            // default_accel_pct -> unused
+        3,            // feedback_adc_pin  (A3 on Arduino Nano)
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "CASO_C",   // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        20,            // allowed_min_deg
+        140,          // allowed_max_deg
+        90,           // rest_deg
+        700,          // pwm_min_us
+        2400,         // pwm_max_us
+        17.5f,        // max_speed_degps
+        0,            // default_speed_pct -> unused
+        0,            // default_accel_pct -> unused
+        3,            // feedback_adc_pin  (A3 on Arduino Nano)
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "SHOULDER",   // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
+        90,           // rest_deg
+        700,          // pwm_min_us
+        2400,         // pwm_max_us
+        17.5f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        3,            // feedback_adc_pin  (A3 on Arduino Nano)
+        101,          // fb_adc_at_servo_min_deg
+        383,          // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    }
+
 };
 
 #endif
