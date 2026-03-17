@@ -49,6 +49,7 @@ Important:
 - Servo configurations are defined in servo_config.h
 - Multiple servo profiles are supported
 - Configuration data is stored in PROGMEM to save SRAM
+- We use external reference Vref for ADC conversions. Use either 5v o 3v3 depending on your servo.
 
 Expected servo_config.h symbols:
 
@@ -604,6 +605,8 @@ void setup()
     lastNextButtonReading = digitalRead(NEXT_SERVO_BUTTON_PIN);
     stableNextButtonState = lastNextButtonReading;
     lastNextDebounceTime  = millis();
+
+    analogReference(EXTERNAL); // We use de 3v3 voltage as reference for ADC
 
     display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
     display.clearDisplay();

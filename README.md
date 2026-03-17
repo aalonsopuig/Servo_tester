@@ -70,7 +70,8 @@ Tested with:
 | PWM enable/disable | D4 | Connected to push button with 1K pulldown resistor |
 | Next servo | D3 | Connected to push button with 1K pulldown resistor |
 | PWM output | defined in `servo_config.h` | Connected to servo |
-| Feedback ADC | defined in `servo_config.h` | Connected to low-pass RC filter (10k/4.7uF) and from it to internal pot of servo |
+| Feedback ADC | defined in `servo_config.h` but in this circuit is A3| Connected to low-pass RC filter (10k/4.7uF) and from it to internal pot of servo |
+| ADC reference | Aref | This voltage reference should be the same voltage connected to the potentiometers. It may be 5v (from +5V pin) or 3.3v (from 3v3 pin) which is better to avoid fluctuations of ADC when power voltage drops for any reason |
 | OLED SDA | A4 | Connected to OLED display |
 | OLED SCL | A5 | Connected to OLED display |
 
