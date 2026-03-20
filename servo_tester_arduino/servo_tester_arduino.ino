@@ -4,7 +4,7 @@ Name:         servo_tester_arduino
 Version:      1.0.0
 Author:       Alejandro Alonso Puig + GPT
 GitHub:       https://github.com/aalonsopuig
-Date:         2026-03-15
+Date:         2026-03-20
 License:      Apache 2.0
 -------------------------------------------------------------------------------
 Description:
@@ -21,6 +21,7 @@ Main functions:
 - Test characterized servos in angular mode
 - Read optional analog feedback if available
 - Show the main operating values on an SSD1306 OLED display
+- Automatically cut PWM output if a feedback-enabled servo enters FAULT
 
 The program is intended for:
 
@@ -49,7 +50,8 @@ Important:
 - Servo configurations are defined in servo_config.h
 - Multiple servo profiles are supported
 - Configuration data is stored in PROGMEM to save SRAM
-- We use external reference Vref for ADC conversions. Use either 5v o 3v3 depending on your servo.
+- This sketch uses EXTERNAL ADC reference. Connect AREF to the chosen Vref
+  (typically 5 V or 3.3 V according to your hardware design)
 
 Expected servo_config.h symbols:
 
@@ -67,6 +69,30 @@ Expected servo_config.h symbols:
 
 #include "ServoController.h"
 #include "servo_config.h"
+
+// ============================================================================
+// User-adjustable safety behaviour
+// ============================================================================
+//
+// The actual fault detection threshold is implemented inside ServoController.
+//
+// The parameters below define how the TESTER reacts once the library reports
+// a fault.
+//
+// FAULT_CONFIRM_CYCLES:
+//   Number of consecutive loop cycles with hasFault()==true required before
+//   the tester cuts PWM output. Keep at 1 for maximum sensitivity.
+//
+// AUTO_CUT_PWM_ON_FAULT:
+//   If true, the tester disables PWM automatically when a fault is detected.
+//
+// NOTE:
+// - With the current library, the fault itself is latched internally.
+// - This sketch adds an application-level reaction on top of that.
+//
+
+#define FAULT_CONFIRM_CYCLES   1
+#define AUTO_CUT_PWM_ON_FAULT  true
 
 // ============================================================================
 // Pins
@@ -151,6 +177,25 @@ ServoConfig activeCfg;
 
 // PWM starts disabled by default for safety.
 bool pwmEnabled = false;
+
+// Application-level fault latch used by the tester UI / behaviour.
+//
+// Why this exists:
+//
+// - ServoController already has its own internal fault latch.
+// - This additional flag lets the tester remember that it has already reacted
+//   to a fault by forcing PWM off.
+// - It is also useful for the OLED display, so the user can clearly see that
+//   the output was disabled because of a detected fault.
+//
+// This flag is cleared:
+// - when changing servo profile
+// - when the user explicitly tries to re-enable PWM
+bool testerFaultLatched = false;
+
+// Counts consecutive loop iterations in which the library reports fault.
+// This gives a small configurable reaction filter at sketch level.
+uint8_t faultConfirmCounter = 0;
 
 // Debounce state for PWM ON/OFF button (D4)
 bool lastPwmButtonReading = LOW;
@@ -476,10 +521,23 @@ void oledPrintServoName(const char* rawName)
     display.println(shortName);
 }
 
-void oledPrintLineOnOff(const __FlashStringHelper* label, bool on)
+// Print PWM line.
+//
+// If a tester-level fault is latched, that condition is shown explicitly.
+// This makes it obvious that PWM is no longer merely "Off" by user choice, but
+// has been disabled due to a detected fault.
+void oledPrintPwmStateLine(bool on, bool fault)
 {
-    display.print(label);
-    display.println(on ? F("On") : F("Off"));
+    display.print(F("PWM "));
+
+    if (fault)
+    {
+        display.println(F("Fault"));
+    }
+    else
+    {
+        display.println(on ? F("On") : F("Off"));
+    }
 }
 
 void oledPrintLineInt(const __FlashStringHelper* label, int value)
@@ -506,6 +564,35 @@ void oledPrintPwmAngLine(float minDeg, float maxDeg, float valueDeg)
 void oledEndFrame()
 {
     display.display();
+}
+
+// ============================================================================
+// Fault reaction helpers
+// ============================================================================
+
+// Clear the tester-level fault state.
+//
+// This does NOT by itself reset the library fault latch.
+// The caller is responsible for also calling servoCtrl.resetFault() when needed.
+void clearTesterFaultState()
+{
+    testerFaultLatched = false;
+    faultConfirmCounter = 0;
+}
+
+// Apply tester-level reaction to a confirmed fault.
+//
+// Current reaction:
+// - latch tester fault flag
+// - force PWM logical state to OFF
+// - disable PWM output from the ServoController
+//
+// We do NOT switch servo profile or otherwise reset the controller here.
+void applyFaultReaction()
+{
+    testerFaultLatched = true;
+    pwmEnabled = false;
+    servoCtrl.disableOutput();
 }
 
 // ============================================================================
@@ -536,6 +623,7 @@ void readServoConfigFromProgmem(uint8_t index)
 void loadActiveServo()
 {
     forcePwmOff();
+    clearTesterFaultState();
 
     // Read active configuration from Flash into RAM.
     readServoConfigFromProgmem(currentServoIndex);
@@ -606,7 +694,7 @@ void setup()
     stableNextButtonState = lastNextButtonReading;
     lastNextDebounceTime  = millis();
 
-    analogReference(EXTERNAL); // We use de 3v3 voltage as reference for ADC
+    analogReference(EXTERNAL); // Use external Vref, e.g. 3.3 V or 5 V
 
     display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
     display.clearDisplay();
@@ -639,6 +727,18 @@ void loop()
     // ------------------------------------------------------------------------
     // Handle PWM ON/OFF button
     // ------------------------------------------------------------------------
+    //
+    // Important behaviour:
+    //
+    // If the tester or the library had previously latched a fault, pressing
+    // the button to enable PWM again is interpreted as an explicit user retry.
+    //
+    // Therefore we:
+    // - clear tester-level fault state
+    // - reset the library fault latch
+    // - re-enable output
+    // - re-synchronize if feedback exists
+    //
     if (buttonPressedEvent(PWM_TOGGLE_BUTTON_PIN,
                            lastPwmButtonReading,
                            stablePwmButtonState,
@@ -650,6 +750,10 @@ void loop()
         {
             if (pwmEnabled)
             {
+                // User is explicitly asking to retry or enable motion.
+                clearTesterFaultState();
+                servoCtrl.resetFault();
+
                 servoCtrl.enableOutput();
 
                 if (hasFeedbackPinInfo(activeCfg))
@@ -660,6 +764,7 @@ void loop()
             else
             {
                 servoCtrl.disableOutput();
+                clearTesterFaultState();
             }
         }
         else
@@ -676,6 +781,8 @@ void loop()
             {
                 rawServo.detach();
             }
+
+            clearTesterFaultState();
         }
     }
 
@@ -713,6 +820,35 @@ void loop()
         {
             servoCtrl.update();
 
+            // ----------------------------------------------------------------
+            // Tester-level reaction to a library fault
+            // ----------------------------------------------------------------
+            //
+            // The library itself detects the fault and latches it internally.
+            // This sketch decides how to react.
+            //
+            // Here we:
+            // - optionally wait for N consecutive fault observations
+            // - then cut PWM output automatically
+            //
+            if (servoCtrl.hasFault())
+            {
+                if (faultConfirmCounter < 255)
+                {
+                    faultConfirmCounter++;
+                }
+
+                if (AUTO_CUT_PWM_ON_FAULT &&
+                    faultConfirmCounter >= FAULT_CONFIRM_CYCLES)
+                {
+                    applyFaultReaction();
+                }
+            }
+            else
+            {
+                faultConfirmCounter = 0;
+            }
+
             // With PWM ON, show the real internal command generated by the
             // motion profile.
             displayPwmAngDeg = servoCtrl.getCommandDeg();
@@ -723,6 +859,10 @@ void loop()
             // With PWM OFF, show directly the user-selected target angle.
             displayPwmAngDeg = targetDeg;
             displayPwmUs     = pwmUsFromAngle(activeCfg, displayPwmAngDeg);
+
+            // No active motion attempt, so clear the confirmation counter.
+            // The library fault latch itself is NOT cleared here.
+            faultConfirmCounter = 0;
         }
 
         bool showAdc   = hasFeedbackPinInfo(activeCfg);
@@ -744,7 +884,7 @@ void loop()
         oledBeginFrame();
 
         oledPrintServoName(activeCfg.name);
-        oledPrintLineOnOff(F("PWM "), servoCtrl.isOutputEnabled());
+        oledPrintPwmStateLine(servoCtrl.isOutputEnabled(), testerFaultLatched);
         oledPrintLineInt(F("PWMus "), displayPwmUs);
         oledPrintPwmAngLine(minDeg, maxDeg, displayPwmAngDeg);
         oledPrintLineInt(F("Vel% "), displaySpeedPct);
@@ -804,7 +944,7 @@ void loop()
         oledBeginFrame();
 
         oledPrintServoName(activeCfg.name);
-        oledPrintLineOnOff(F("PWM "), pwmEnabled);
+        oledPrintPwmStateLine(pwmEnabled, false);
         oledPrintLineInt(F("PWMus "), displayPwmUs);
         oledPrintPwmAngLine(minDeg, maxDeg, displayPwmAngDeg);
 
@@ -858,7 +998,7 @@ void loop()
         oledBeginFrame();
 
         oledPrintServoName(activeCfg.name);
-        oledPrintLineOnOff(F("PWM "), pwmEnabled);
+        oledPrintPwmStateLine(pwmEnabled, false);
         oledPrintLineInt(F("PWMus "), pwmUs);
 
         if (showAdc)
