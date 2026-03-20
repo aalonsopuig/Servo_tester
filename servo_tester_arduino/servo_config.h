@@ -59,7 +59,7 @@ const ServoConfig testerServoConfigs[] PROGMEM =
         false         // fault_detection_enabled
     },
     {
-        "SG-5010",    // name
+        "TowerPro SG-5010",    // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
@@ -67,8 +67,8 @@ const ServoConfig testerServoConfigs[] PROGMEM =
         180,          // allowed_max_deg
         90,           // rest_deg
         500,          // pwm_min_us
-        1800,         // pwm_max_us
-        261.0f,       // max_speed_degps
+        1806,         // pwm_max_us
+        375.0f,       // max_speed_degps
         100,          // default_speed_pct
         100,          // default_accel_pct
         -1,           // feedback_adc_pin disabled
@@ -78,15 +78,15 @@ const ServoConfig testerServoConfigs[] PROGMEM =
         false         // fault_detection_enabled
     },
     {
-        "Hitec HS-805BB", // name
+        "Futaba S3003", // name
         9,                // pwm_pin
         0,                // servo_min_deg
         180,              // servo_max_deg
         0,                // allowed_min_deg
         180,              // allowed_max_deg
         90,               // rest_deg
-        700,              // pwm_min_us
-        2400,             // pwm_max_us
+        677,              // pwm_min_us
+        2350,             // pwm_max_us
         428.6f,           // max_speed_degps
         100,              // default_speed_pct
         100,              // default_accel_pct
@@ -97,21 +97,78 @@ const ServoConfig testerServoConfigs[] PROGMEM =
         false             // fault_detection_enabled
     },
     {
-        "SHOULDER",   // name
+        "Inmoov SHOULDER-R",   // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
         0,            // allowed_min_deg
         180,          // allowed_max_deg
         90,           // rest_deg
-        700,          // pwm_min_us
-        2400,         // pwm_max_us
+        677,              // pwm_min_us
+        2350,             // pwm_max_us
         17.5f,        // max_speed_degps
         100,          // default_speed_pct
         100,          // default_accel_pct
         3,            // feedback_adc_pin  (A3 on Arduino Nano)
-        101,          // fb_adc_at_servo_min_deg
-        383,          // fb_adc_at_servo_max_deg
+        148,          // fb_adc_at_servo_min_deg
+        568,          // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "DIYMore DM996",    // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
+        90,           // rest_deg
+        559,          // pwm_min_us
+        2472,         // pwm_max_us
+        400.0f,       // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,           // feedback_adc_pin disabled
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "Miuzei MG90",    // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
+        90,           // rest_deg
+        561,          // pwm_min_us
+        2500,         // pwm_max_us
+        750.0f,       // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,           // feedback_adc_pin disabled
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "Inmoov BICEP-R",   // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        0,            // allowed_min_deg
+        180,          // allowed_max_deg
+        90,           // rest_deg
+        677,              // pwm_min_us
+        2350,             // pwm_max_us
+        17.5f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        3,            // feedback_adc_pin  (A3 on Arduino Nano)
+        148,          // fb_adc_at_servo_min_deg
+        568,          // fb_adc_at_servo_max_deg
         false,        // inverted
         false         // fault_detection_enabled
     }

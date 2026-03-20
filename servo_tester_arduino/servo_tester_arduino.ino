@@ -415,7 +415,7 @@ bool buttonPressedEvent(uint8_t pin,
 // Name display helper
 // ---------------------------------------------------------------------------
 
-// Copy at most 15 visible characters from the servo name into a local buffer.
+// Copy at most 19 visible characters from the servo name into a local buffer.
 // This prevents wrapping and avoids corrupting the OLED layout even if the
 // configured name is long.
 void makeShortServoName(const char* src, char* dst, size_t dstSize)
@@ -424,7 +424,7 @@ void makeShortServoName(const char* src, char* dst, size_t dstSize)
 
     size_t i = 0;
 
-    while (src[i] != '\0' && i < (dstSize - 1) && i < 15)
+    while (src[i] != '\0' && i < (dstSize - 1) && i < 19)
     {
         dst[i] = src[i];
         i++;
@@ -466,13 +466,13 @@ void oledPrintSplash()
     display.display();
 }
 
-// Print servo name without ":" and clipped to 15 chars.
+// Print servo name and clipped to 19 chars.
 void oledPrintServoName(const char* rawName)
 {
-    char shortName[16];
+    char shortName[20];
     makeShortServoName(rawName, shortName, sizeof(shortName));
 
-    display.print(F("Servo "));
+    display.print(F("S "));
     display.println(shortName);
 }
 
