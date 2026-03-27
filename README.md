@@ -1,50 +1,54 @@
 # Arduino Servo Tester
 
-Author: Alejandro Alonso Puig + GPT
-
-License: Apache 2.0 
-
-Repository: https://github.com/aalonsopuig
-
-Status: Validation in progress (March 2026)
+**Author:** Alejandro Alonso Puig + GPT  
+**License:** Apache 2.0  
+**Repository:** https://github.com/aalonsopuig  
+**Status:** Validated v1.0.0 (March 2026)
 
 ---
+
+## Overview
+
 Servo tester and characterization tool for Arduino Nano.
 
-This project allows testing and calibrating multiple servo configurations using a single hardware setup.  
-It is especially useful when working with robots that contain many different servos or mechanical reductions.
+This tool allows testing, calibrating, and validating different servo configurations using a single hardware setup.  
+It is especially useful in robotic systems where multiple servos with different characteristics or mechanical reductions are used.
 
-The tester supports both **unknown servos** (PWM exploration) and **fully characterized servos** (angular control with limits, speed and acceleration).
+The tester supports both:
 
-This application uses the Enhanced servo library https://github.com/aalonsopuig/Enhanced_Servo_Library
+- **Unknown servos** (PWM exploration mode)
+- **Characterized servos** (angle control with limits, speed, and acceleration)
+
+This application is based on the **Enhanced Servo Library**:  
+https://github.com/aalonsopuig/Enhanced_Servo_Library
 
 ---
 
 ## Main Features
 
-- Test **unknown servos** by directly controlling PWM pulse width
-- Test **characterized servos** using angle control
+- PWM-based testing for **unknown servos**
+- Angle-based control for **calibrated servos**
 - Support for **multiple servo profiles**
-- Change active servo configuration with a pushbutton
-- Enable / disable PWM safely
+- Runtime selection of servo configuration via pushbutton
+- Safe **PWM enable/disable control**
 - Optional **analog feedback reading**
-- OLED display showing operating parameters
-- Uses **PROGMEM** to store many servo configurations without exhausting RAM
-- Works on **Arduino Nano / ATmega328**
+- OLED display with real-time system parameters
+- Efficient use of memory via **PROGMEM**
+- Compatible with **Arduino Nano / ATmega328**
 
 ---
 
 ## Typical Use Cases
 
-This tool is useful for:
+This tool is designed for:
 
 - discovering safe PWM limits of a servo
-- verifying servo calibration data
-- validating mechanical limits of a joint
+- calibrating servo angular range
+- validating mechanical limits of joints
 - testing servos with gear reductions
-- reading analog feedback signals
-- tuning speed and acceleration parameters
-- validating servo configurations before integrating them in a robot
+- evaluating analog feedback signals
+- tuning speed and acceleration profiles
+- validating configurations before robot integration
 
 ---
 
@@ -53,28 +57,30 @@ This tool is useful for:
 Tested with:
 
 - Arduino Nano
-- SSD1306 OLED display (128x64 I2C)
-- standard hobby servos
+- SSD1306 OLED display (128x64, I2C)
+- Standard hobby servos
+
 <br>
 <p align="center">
   <img src="servo_tester_arduino/servo_tester_arduino.jpg" width="600">
 </p>
 
-### Connections
+---
+
+## Connections
 
 | Use | Pin | Connection |
 |------|------|------|
-| Target angle | A2 | Connected to 10K pot voltage divider |
-| Speed | A1 | Connected to 10K pot voltage divider |
-| Acceleration | A0 | Connected to 10K pot voltage divider |
-| PWM enable/disable | D4 | Connected to push button with 1K pulldown resistor |
-| Next servo | D3 | Connected to push button with 1K pulldown resistor |
-| PWM output | defined in `servo_config.h` | Connected to servo |
-| Feedback ADC | defined in `servo_config.h` but in this circuit is A3| Connected to low-pass RC filter (10k/4.7uF) and from it to internal pot of servo |
-| ADC reference | Aref | This voltage reference should be the same voltage connected to the potentiometers. It may be 5v (from +5V pin) or 3.3v (from 3v3 pin) which is better to avoid fluctuations of ADC when power voltage drops for any reason |
-| OLED SDA | A4 | Connected to OLED display |
-| OLED SCL | A5 | Connected to OLED display |
-
+| Target angle | A2 | 10K potentiometer (voltage divider) |
+| Speed | A1 | 10K potentiometer (voltage divider) |
+| Acceleration | A0 | 10K potentiometer (voltage divider) |
+| PWM enable/disable | D4 | Push button with 1K pulldown resistor |
+| Next servo | D3 | Push button with 1K pulldown resistor |
+| PWM output | defined in `servo_config.h` | Connected to servo signal |
+| Feedback ADC | defined in `servo_config.h` (typically A3) | Connected via RC filter (10k / 4.7µF) to servo internal potentiometer |
+| ADC reference | Aref | Must match potentiometer voltage (5V or 3.3V; 3.3V recommended for stability) |
+| OLED SDA | A4 | I2C data |
+| OLED SCL | A5 | I2C clock |
 
 ---
 
@@ -82,46 +88,49 @@ Tested with:
 
 ### Target Potentiometer (A2)
 
-Controls the servo position.
+Controls servo position.
 
-Depending on the servo configuration it may represent:
+Depending on configuration:
 
-- PWM pulse width
-- angular position within allowed limits
+- PWM pulse width (unknown servo mode)
+- Angular position within calibrated limits
 
-<br>
+---
 
 ### Speed Potentiometer (A1)
 
 Controls speed percentage.
 
-Used only when the servo configuration includes speed data.
+Only active when the servo profile includes speed control.
 
-<br>
+---
 
 ### Acceleration Potentiometer (A0)
 
 Controls acceleration percentage.
 
-Used only when the servo configuration supports motion profiling.
+Only active when motion profiling is enabled.
 
-<br>
+---
 
 ### PWM Button (D4)
 
 Toggles PWM output:
-- OFF → servo detached
-- ON → servo driven
 
+- OFF → servo detached (safe state)
+- ON → servo actively driven
 
 The system always starts with **PWM disabled** for safety.
 
-<br>
+---
 
 ### Next Servo Button (D3)
 
-Cycles through the servo configurations defined in: servo_config.h
+Cycles through servo configurations defined in:
 
+```cpp
+servo_config.h
+```
 
 When switching servo:
 
@@ -153,6 +162,8 @@ Typical information includes:
 
 - **FBang**: Estimated servo angle derived from the feedback ADC calibration.
 
+- **Curr**: estimated current in milliamperes, derived from the configured current sensor calibration
+  
 Fields appear only when the corresponding data exists.
 
 
@@ -160,77 +171,68 @@ Fields appear only when the corresponding data exists.
 
 ## Servo Configuration
 
-Servo configurations are defined in: servo_config.h
+Servo configurations are defined in: `servo_config.h`
 
 Each entry describes one servo profile, including:
 
-- **name**: Human-readable identifier of the servo configuration.
+- **name**: Human-readable identifier of the servo profile.  
+- **pwm_pin**: Arduino pin used to generate the PWM signal.  
+- **servo_min_deg**: Minimum calibrated physical angle of the servo.  
+- **servo_max_deg**: Maximum calibrated physical angle of the servo.  
+- **allowed_min_deg**: Minimum application-level allowed angle.  
+- **allowed_max_deg**: Maximum application-level allowed angle.  
+- **rest_deg**: Neutral or startup position used during initialization.  
+- **pwm_min_us**: Minimum PWM pulse width in microseconds.  
+- **pwm_max_us**: Maximum PWM pulse width in microseconds.  
+- **max_speed_degps**: Maximum physical speed of the servo in degrees per second.  
+- **default_speed_pct**: Default speed percentage.  
+- **default_accel_pct**: Default acceleration percentage.  
+- **feedback_adc_pin**: Analog input used to read optional servo position feedback.  
+- **fb_adc_at_servo_min_deg**: Feedback ADC value measured at `servo_min_deg`.  
+- **fb_adc_at_servo_max_deg**: Feedback ADC value measured at `servo_max_deg`.  
+- **current_adc_pin**: Analog input used to read the optional current sensor.  
+- **current_adc_offset**: ADC offset value corresponding to 0 mA.  
+- **current_mA_per_count**: Calibration factor used to convert ADC counts into milliamperes.  
+- **inverted**: Indicates whether servo direction must be inverted.  
+- **fault_detection_enabled**: Enables current-based fault detection inside the servo controller.  
 
-- **pwm_pin**: Arduino pin used to generate the PWM signal for the servo.
 
-- **servo_min_deg**: Minimum physical angle of the servo.
-
-- **servo_max_deg**: Maximum physical angle of the servo.
-
-- **allowed_min_deg**: Minimum allowed operating angle for this application.
-
-- **allowed_max_deg**: Maximum allowed operating angle for this application.
-
-- **rest_deg**: Rest or neutral position used for initialization.
-
-- **pwm_min_us**: Pulse width corresponding to the minimum servo position.
-
-- **pwm_max_us**: Pulse width corresponding to the maximum servo position.
-
-- **max_speed_degps**: Maximum servo speed in degrees per second.
-
-- **default_speed_pct**: Default speed percentage used by the controller.
-
-- **default_accel_pct**: Default acceleration percentage used by the controller.
-
-- **feedback_adc_pin**: Analog pin used to read servo position feedback.
-
-- **fb_adc_at_servo_min_deg**: ADC value measured when the servo is at its minimum angle.
-
-- **fb_adc_at_servo_max_deg**: ADC value measured when the servo is at its maximum angle.
-
-- **inverted**: Indicates whether the servo direction must be inverted.
-
-- **fault_detection_enabled**: Enables or disables fault detection logic.
 
 Example:
 
-    {
-        "SHOULDER",   // name
-        9,            // pwm_pin
-        0,            // servo_min_deg
-        180,          // servo_max_deg
-        0,            // allowed_min_deg
-        180,          // allowed_max_deg
-        90,           // rest_deg
-        700,          // pwm_min_us
-        2400,         // pwm_max_us
-        17.5f,        // max_speed_degps
-        100,          // default_speed_pct
-        100,          // default_accel_pct
-        3,            // feedback_adc_pin  (A3 on Arduino Nano)
-        101,          // fb_adc_at_servo_min_deg
-        383,          // fb_adc_at_servo_max_deg
-        false,        // inverted
-        false         // fault_detection_enabled
-    }
-
+```cpp
+{
+    "SHOULDER",   // name
+    9,            // pwm_pin
+    0,            // servo_min_deg
+    180,          // servo_max_deg
+    0,            // allowed_min_deg
+    180,          // allowed_max_deg
+    90,           // rest_deg
+    700,          // pwm_min_us
+    2400,         // pwm_max_us
+    17.5f,        // max_speed_degps
+    100,          // default_speed_pct
+    100,          // default_accel_pct
+    3,            // feedback_adc_pin
+    101,          // fb_adc_at_servo_min_deg
+    383,          // fb_adc_at_servo_max_deg
+    A5,           // current_adc_pin
+    512,          // current_adc_offset
+    12.5f,        // current_mA_per_count
+    false,        // inverted
+    true          // fault_detection_enabled
+}
+```
 ---
 
 ## Memory Optimization
 
-Servo configurations are stored in PROGMEM (Flash memory) instead of SRAM.
+Servo configurations are stored in **PROGMEM** (Flash memory) instead of SRAM.
 
-This allows defining many servo profiles without exhausting RAM. Memory Optimization
+This allows defining multiple servo profiles without exhausting the limited RAM available on microcontrollers such as the Arduino Nano (ATmega328).
 
-Servo configurations are stored in PROGMEM (Flash memory) instead of SRAM.
-
-This allows defining many servo profiles without exhausting RAM.
+At runtime, only the active configuration is copied from Flash into SRAM, minimizing memory usage while keeping flexibility.
 
 ---
 
@@ -244,9 +246,6 @@ Servo configuration parameters come from three different sources:
 - **Mechanical joint** (limits imposed by the robot articulation)
 - **Application settings** (desired behavior)
 
-A convenient calibration tool is the program:
-
-https://github.com/aalonsopuig/Servo_tester
 
 During calibration the **speed and acceleration potentiometers should be set to 100%**.
 
@@ -340,7 +339,7 @@ max_speed_degps ≈ 17.5 deg/s
 
 <br>
 
-### 5. Feedback calibration (optional)
+### 5. Angle feedback calibration (optional)
 
 If the servo feedback potentiometer is accessible, its ADC values can be used to estimate the real angle.
 
@@ -368,7 +367,42 @@ These values depend on the **servo electronics**, not the articulation.
 
 <br>
 
-### 6. Final configuration
+### 6. Current Feedback Calibration (Optional)
+
+This step allows converting raw ADC readings from the current sensor into meaningful current values (mA).
+
+The calibration is performed using the standalone **Current Sensing Calibration Tool**. Use the calibration tool described in the repository: https://github.com/aalonsopuig/Current_sensing_calibration
+
+#### Procedure
+
+1. Connect the current sensor output to the configured `current_adc_pin`.
+2. Ensure the ADC reference (AREF) is stable and known (e.g. 3.3V or 5V).
+3. Upload and run the calibration tool.
+4. With **no load (0 A)**:
+   - Record the ADC value → this is the **offset** (`current_adc_offset`)
+5. Apply one or more **known current loads**:
+   - Record corresponding ADC values
+6. Compute the calibration factor:
+
+```text
+k = (current_mA) / (adc - offset)
+```
+Where:
+
+- `adc` → measured ADC value under load
+- `offset` → ADC value at 0 A
+- `current_mA` → known current in milliamperes
+Configuration
+
+Once calibrated, update the servo profile:
+
+```Cpp
+current_adc_pin         = <your pin>
+current_adc_offset      = <measured offset>
+current_mA_per_count    = <k>
+```
+
+### 7. Final configuration
 
 Once these values are known, the corresponding entry can be completed in `servo_config.h`.
 
@@ -387,11 +421,9 @@ used with this library. Speed values correspond to **6 V supply** when available
 
 | Servo model        | servo_min_deg | servo_max_deg | pwm_min_us | pwm_max_us | max_speed_degps |
 |--------------------|--------------|--------------|-----------|-----------|----------------|
-| Hitec HS-805BB     | 0            | 180          | 700       | 2400      | 428.6          |
+| Hitec HS-805BB     | 0            | 180          | 677       | 2350      | 428.6          |
 | TowerPro SG-5010   | 0            | 180          | 500       | 1806      | 375.0          |
-| HobbyKing HK15298  | —            | —            | —         | —         | 461.5          |
-| Miuzei MF90        | 0            | 180          | 500       | 2500      | 750.0          |
-| Corona DS929HV     | —            | —            | —         | —         | 600.0          |
+| Miuzei MF90        | 0            | 180          | 561       | 2500      | 750.0          |
 | Futaba S3003       | 0            | 180          | 578       | 2300      | 315.8          |
 | DIYMore DM996      | 0            | 180          | 559       | 2472      | 400.0          |
 
