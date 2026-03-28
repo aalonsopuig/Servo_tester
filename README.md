@@ -77,7 +77,8 @@ Tested with:
 | PWM enable/disable | D4 | Push button with 1K pulldown resistor |
 | Next servo | D3 | Push button with 1K pulldown resistor |
 | PWM output | defined in `servo_config.h` | Connected to servo signal |
-| Feedback ADC | defined in `servo_config.h` (typically A3) | Connected via RC filter (10k / 4.7µF) to servo internal potentiometer |
+| Feedback Angle | defined in `servo_config.h` (typically A3) | Connected via RC filter (10k / 4.7µF) to servo internal potentiometer |
+| Feedback Current | defined in `servo_config.h` (typically A6) | Connected to ACS712 Hall-effect current sensor. Recommended filter: https://is.gd/E6WZuH |
 | ADC reference | Aref | Must match potentiometer voltage (5V or 3.3V; 3.3V recommended for stability) |
 | OLED SDA | A4 | I2C data |
 | OLED SCL | A5 | I2C clock |
