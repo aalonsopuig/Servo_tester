@@ -1,12 +1,14 @@
 /*
 ===============================================================================
-File:         servo_config.h
+File:         servo_config_inmoov.h
 Version:      1.0.0
 Author:       Alejandro Alonso Puig + GPT
 Date:         2026-04-14
 License:      Apache 2.0
 -------------------------------------------------------------------------------
 Description:
+
+**************** Specific version for Inmoov project ****************
 
 Multi-servo configuration file used by servo_tester_arduino.ino.
 
@@ -48,40 +50,16 @@ timing, ADC offset and current conversion factor.
 const ServoConfig testerServoConfigs[] PROGMEM =
 {
     {
-        "UNKNOWN 500-2500us",    // name
-        9,            // pwm_pin
-        0,            // servo_min_deg   -> unknown
-        0,            // servo_max_deg   -> unknown
-        0,            // allowed_min_deg -> unknown
-        0,            // allowed_max_deg -> unknown
-        0,            // rest_deg        -> unknown
-        500,          // pwm_min_us
-        2500,         // pwm_max_us
-        0.0f,         // max_speed_degps -> unknown
-        0,            // default_speed_pct -> unused
-        0,            // default_accel_pct -> unused
-        3,            // feedback_adc_pin  (A3 on Arduino Nano)
-        0,            // fb_adc_at_servo_min_deg
-        0,            // fb_adc_at_servo_max_deg
-        6,            // current_adc_pin
-        0,            // current_limit_mA
-        0,            // overcurrent_time_ms
-        499,          // current_adc_offset
-        12.2f,        // current_mA_per_count
-        false,        // inverted
-        false         // fault_detection_enabled
-    },
-    {
-        "Hitec HS-805BB", // name
+        "Inmoov R-OMOPLATE", // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
         0,            // allowed_min_deg
-        180,          // allowed_max_deg
-        90,           // rest_deg
+        38,           // allowed_max_deg
+        0,            // rest_deg
         677,          // pwm_min_us
         2350,         // pwm_max_us
-        428.6f,       // max_speed_degps
+        35.0f,        // max_speed_degps
         100,          // default_speed_pct
         100,          // default_accel_pct
         -1,           // feedback_adc_pin disabled
@@ -96,40 +74,40 @@ const ServoConfig testerServoConfigs[] PROGMEM =
         false         // fault_detection_enabled
     },
     {
-        "TowerPro SG-5010", // name
+        "Inmoov R-SHOULDER", // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
-        0,            // allowed_min_deg
-        180,          // allowed_max_deg
-        90,           // rest_deg
-        500,          // pwm_min_us
-        1806,         // pwm_max_us
-        375.0f,       // max_speed_degps
-        100,          // default_speed_pct
-        100,          // default_accel_pct
-        -1,           // feedback_adc_pin disabled
-        0,            // fb_adc_at_servo_min_deg
-        0,            // fb_adc_at_servo_max_deg
-        6,            // current_adc_pin
-        0,            // current_limit_mA
-        0,            // overcurrent_time_ms
-        499,          // current_adc_offset
-        12.2f,        // current_mA_per_count
-        false,        // inverted
-        false         // fault_detection_enabled
-    },
-    {
-        "Futaba S3003", // name
-        9,            // pwm_pin
-        0,            // servo_min_deg
-        180,          // servo_max_deg
-        0,            // allowed_min_deg
-        180,          // allowed_max_deg
-        90,           // rest_deg
+        45,           // allowed_min_deg
+        150,          // allowed_max_deg
+        70,           // rest_deg
         677,          // pwm_min_us
         2350,         // pwm_max_us
-        428.6f,       // max_speed_degps
+        20.0f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,           // feedback_adc_pin disabled
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        6,            // current_adc_pin
+        0,            // current_limit_mA
+        0,            // overcurrent_time_ms
+        499,          // current_adc_offset
+        12.2f,        // current_mA_per_count
+        false,        // inverted
+        true          // fault_detection_enabled
+    },
+    {
+        "Inmoov R-ROTATE", // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        60,           // allowed_min_deg
+        145,          // allowed_max_deg
+        105,          // rest_deg
+        677,          // pwm_min_us
+        2350,         // pwm_max_us
+        20.0f,        // max_speed_degps
         100,          // default_speed_pct
         100,          // default_accel_pct
         -1,           // feedback_adc_pin disabled
@@ -144,16 +122,40 @@ const ServoConfig testerServoConfigs[] PROGMEM =
         false         // fault_detection_enabled
     },
     {
-        "DIYMore DM996", // name
+        "Inmoov R-BICEP", // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
-        0,            // allowed_min_deg
+        16,            // allowed_min_deg
+        100,          // allowed_max_deg
+        20,           // rest_deg
+        677,          // pwm_min_us
+        2350,         // pwm_max_us
+        35.0f,        // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        3,            // feedback_adc_pin (A3 on Arduino Nano)
+        148,          // fb_adc_at_servo_min_deg
+        568,          // fb_adc_at_servo_max_deg
+        6,            // current_adc_pin
+        1100,         // current_limit_mA
+        500,          // overcurrent_time_ms
+        499,          // current_adc_offset
+        12.2f,        // current_mA_per_count
+        false,        // inverted
+        true          // fault_detection_enabled
+    },
+    {
+        "Inmoov R-F-THUMB", // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        106,          // allowed_min_deg
         180,          // allowed_max_deg
-        90,           // rest_deg
-        559,          // pwm_min_us
-        2472,         // pwm_max_us
-        400.0f,       // max_speed_degps
+        180,          // rest_deg
+        578,          // pwm_min_us
+        2300,         // pwm_max_us
+        315.8f,       // max_speed_degps
         100,          // default_speed_pct
         100,          // default_accel_pct
         -1,           // feedback_adc_pin disabled
@@ -168,16 +170,88 @@ const ServoConfig testerServoConfigs[] PROGMEM =
         false         // fault_detection_enabled
     },
     {
-        "Miuzei MG90", // name
+        "Inmoov R-F-INDEX", // name
         9,            // pwm_pin
         0,            // servo_min_deg
         180,          // servo_max_deg
-        0,            // allowed_min_deg
-        180,          // allowed_max_deg
-        90,           // rest_deg
-        561,          // pwm_min_us
-        2500,         // pwm_max_us
-        750.0f,       // max_speed_degps
+        070,          // allowed_min_deg
+        160,          // allowed_max_deg
+        150,          // rest_deg
+        578,          // pwm_min_us
+        2300,         // pwm_max_us
+        315.8f,       // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,           // feedback_adc_pin disabled
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        6,            // current_adc_pin
+        0,            // current_limit_mA
+        0,            // overcurrent_time_ms
+        499,          // current_adc_offset
+        12.2f,        // current_mA_per_count
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "Inmoov R-F-MIDDLE", // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        055,          // allowed_min_deg
+        166,          // allowed_max_deg
+        150,          // rest_deg
+        578,          // pwm_min_us
+        2300,         // pwm_max_us
+        315.8f,       // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,           // feedback_adc_pin disabled
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        6,            // current_adc_pin
+        0,            // current_limit_mA
+        0,            // overcurrent_time_ms
+        499,          // current_adc_offset
+        12.2f,        // current_mA_per_count
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "Inmoov R-F-RING", // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        060,          // allowed_min_deg
+        162,          // allowed_max_deg
+        160,          // rest_deg
+        578,          // pwm_min_us
+        2300,         // pwm_max_us
+        315.8f,       // max_speed_degps
+        100,          // default_speed_pct
+        100,          // default_accel_pct
+        -1,           // feedback_adc_pin disabled
+        0,            // fb_adc_at_servo_min_deg
+        0,            // fb_adc_at_servo_max_deg
+        6,            // current_adc_pin
+        0,            // current_limit_mA
+        0,            // overcurrent_time_ms
+        499,          // current_adc_offset
+        12.2f,        // current_mA_per_count
+        false,        // inverted
+        false         // fault_detection_enabled
+    },
+    {
+        "Inmoov R-F-PINKY", // name
+        9,            // pwm_pin
+        0,            // servo_min_deg
+        180,          // servo_max_deg
+        075,          // allowed_min_deg
+        168,          // allowed_max_deg
+        155,          // rest_deg
+        578,          // pwm_min_us
+        2300,         // pwm_max_us
+        315.8f,       // max_speed_degps
         100,          // default_speed_pct
         100,          // default_accel_pct
         -1,           // feedback_adc_pin disabled
